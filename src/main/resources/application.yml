@@ -1,0 +1,7 @@
+server:
+  port: 3000
+
+settings:
+  tankEnergy: 3
+  levelWidth: 12
+  levelHeight: 12
