@@ -14,6 +14,8 @@ import org.springframework.context.annotation.Configuration;
 public class ServerSettings {
 
     private int tankEnergy;
+    private int tankMovementDelay;
+
     private int levelWidth;
     private int levelHeight;
 }

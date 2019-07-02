@@ -2,6 +2,7 @@ server:
   port: 3000
 
 settings:
+  tankMovementDelay: 1
   tankEnergy: 3
   levelWidth: 12
   levelHeight: 12
