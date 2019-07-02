@@ -130,6 +130,7 @@ public class StateService {
             .filter(tank -> tank.getId() == tankId).findFirst();
 
         if (tankOpt.isPresent()) {
+
             final var tank = tankOpt.get();
             final var vector2D = action.getVector2D();
             final var position = ArrayUtils.clone(tank.getPosition());
@@ -138,6 +139,14 @@ public class StateService {
             position[1] = position[1] + vector2D.getRight();
 
             // TODO validate if movement is possible
+
+            // Check for timed delay
+            if (tank.getLastMove() != null &&
+                tank.getLastMove().toInstant()
+                    .plusSeconds(serverSettings.getTankMovementDelay())
+                    .isAfter(Instant.now())) {
+                return false;
+            }
 
             tank.setPosition(position);
             tank.setDirection(CardinalDirection.fromDirection(action.getAction()));
@@ -165,5 +174,5 @@ public class StateService {
             return moveTank(tankActionRequest.getTankId(), action);
         }
     }
-    
+
 }
