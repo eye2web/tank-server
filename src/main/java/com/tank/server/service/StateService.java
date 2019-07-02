@@ -149,17 +149,21 @@ public class StateService {
         return false;
     }
 
+    private boolean tankFire(final int tankId) {
+
+        // TODO implement tank fire
+        return false;
+    }
+
     public boolean tankAction(final ActionRequest tankActionRequest) {
 
         final var action = tankActionRequest.getAction();
 
-        if (!action.equals(TankAction.FIRE)) {
-
+        if (action.equals(TankAction.FIRE)) {
+            return tankFire(tankActionRequest.getTankId());
+        } else {
             return moveTank(tankActionRequest.getTankId(), action);
         }
-
-        return false;
     }
-
-
+    
 }
