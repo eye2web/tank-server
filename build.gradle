@@ -1,0 +1,71 @@
+buildscript {
+    ext {
+        springBootVersion = '2.1.5.RELEASE'
+        springCloudVersion = 'Greenwich.RELEASE'
+        lombokVersion = '1.18.8'
+        gradleVersion =  '5.4.1'
+    }
+    repositories {
+        mavenCentral()
+        maven { url "https://repo.spring.io/milestone" }
+        maven { url "https://repo.spring.io/libs-milestone" }
+
+        jcenter()
+    }
+    dependencies {
+        classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:4+'
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.6.RELEASE"
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+apply from: "${rootDir}/gradle/dependencies.gradle"
+
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url "https://repo.spring.io/milestone" }
+    maven { url "https://repo.spring.io/libs-milestone" }
+    jcenter()
+}
+
+configurations {
+    all*.exclude group: 'org.springframework.boot', module:'spring-boot-starter-tomcat'
+}
+
+dependencies {
+
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+    compile libraries.springboot,
+            libraries.tools,
+            libraries.ppfmicroaws,
+            libraries.database
+
+    testCompile libraries.test
+}
+
+test {
+    testLogging {
+        events "PASSED", "FAILED", "SKIPPED"
+    }
+}
+
+wrapper {
+    gradleVersion = gradleVersion
+}
