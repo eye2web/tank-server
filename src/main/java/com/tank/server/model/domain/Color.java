@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonValue;
 import java.util.Arrays;
 
 public enum Color {
-    RED("red"), BLUE("blue"), PINK("pink"), ORANGE("orange");
+    RED("red"), BLUE("greenyellow"), PINK("hotpink"), ORANGE("orange");
 
     private final String color;
 

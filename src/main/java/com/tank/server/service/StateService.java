@@ -5,13 +5,13 @@ import com.tank.server.model.ActionRequest;
 import com.tank.server.model.domain.CardinalDirection;
 import com.tank.server.model.domain.Color;
 import com.tank.server.model.domain.Dimension;
+import com.tank.server.model.domain.Laser;
 import com.tank.server.model.domain.StaticObject;
 import com.tank.server.model.domain.Tank;
 import com.tank.server.model.domain.TankAction;
 import com.tank.server.model.domain.World;
 import com.tank.server.properties.ServerSettings;
 
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Stack;
@@ -36,7 +37,6 @@ public class StateService {
     private final StaticObjectFactory staticObjectFactory;
     private Stack<Tank> availableTanks;
 
-    @Getter
     private World world;
 
     private StateService(final ServerSettings serverSettings, final StaticObjectFactory staticObjectFactory) {
@@ -46,10 +46,16 @@ public class StateService {
         resetGame();
     }
 
+    public World getWorld() {
+        checkLaserExpired(world.getLasers());
+        return world;
+    }
+
     public void resetGame() {
 
         world =
             new World(
+                new ArrayList<>(),
                 new ArrayList<>(),
                 new Dimension(serverSettings.getLevelWidth(), serverSettings.getLevelHeight()),
                 getStaticWorldObjects());
@@ -202,23 +208,28 @@ public class StateService {
             final var direction = TankAction.fromAction(tank.getDirection().getDirection());
 
             int[] position = tank.getPosition();
+            int[] startPosition = null;
 
             do {
                 position = nextPosition(position, direction.getVector2D());
+
+                if (Objects.isNull(startPosition)) {
+                    startPosition = position;
+                }
 
                 final var optTankShot = getTankAtPosition(position);
 
                 if (optTankShot.isPresent()) {
 
                     handleTankHit(tank, optTankShot.get());
-                    return true;
+                    break;
                 }
                 final var optStaticObjectShot = collisionWithStaticObject(position);
 
                 if (optStaticObjectShot.isPresent()) {
 
                     handleStaticObjectHit(optStaticObjectShot.get());
-                    return true;
+                    break;
                 }
 
             } while (
@@ -228,9 +239,39 @@ public class StateService {
                     position[1] > 0
             );
 
+            addLaserToWorld(startPosition, position, tank.getDirection());
+
+            return true;
         }
 
         return false;
+    }
+
+    private void addLaserToWorld(final int[] startPosition,
+                                 final int[] endPosition,
+                                 final CardinalDirection direction) {
+
+        world.getLasers().add(new Laser(ArrayUtils.clone(startPosition),
+            ArrayUtils.clone(endPosition),
+            Timestamp.from(Instant.now()),
+            Timestamp.from(Instant.now().plusSeconds(serverSettings.getTankShootDelay())),
+            direction
+        ));
+    }
+
+    private void checkLaserExpired(final List<Laser> lasers) {
+
+        final var deleteLasers = new ArrayList<Laser>();
+
+        for (Laser laser : lasers) {
+
+            if (laser.getEndTime().toInstant().isBefore(Instant.now())) {
+                deleteLasers.add(laser);
+            }
+
+        }
+
+        lasers.removeAll(deleteLasers);
     }
 
     private void handleTankHit(final Tank shootingTank, final Tank targetTank) {
