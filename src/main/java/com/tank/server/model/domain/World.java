@@ -11,4 +11,5 @@ public class World {
 
     private final List<Tank> tanks;
     private final Dimension dimensions;
+    private final List<StaticObject> staticObjects;
 }

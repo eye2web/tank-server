@@ -3,6 +3,7 @@ server:
 
 settings:
   tankMovementDelay: 1
+  tankShootDelay: 2
   tankEnergy: 3
   levelWidth: 12
   levelHeight: 12

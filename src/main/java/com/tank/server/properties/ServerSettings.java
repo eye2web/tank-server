@@ -15,6 +15,7 @@ public class ServerSettings {
 
     private int tankEnergy;
     private int tankMovementDelay;
+    private int tankShootDelay;
 
     private int levelWidth;
     private int levelHeight;
