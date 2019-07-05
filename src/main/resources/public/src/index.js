@@ -184,7 +184,7 @@ function renderWorld(data) {
 
 
 async function tick() {
-  const response = await fetch('http://130.144.76.188:3000/world');
+  const response = await fetch('/world');
   const data = await response.json();
   renderWorld(data);
 }
