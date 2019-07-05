@@ -9,6 +9,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class World {
 
+    private final List<Laser> lasers;
     private final List<Tank> tanks;
     private final Dimension dimensions;
     private final List<StaticObject> staticObjects;
