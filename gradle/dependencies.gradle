@@ -32,12 +32,7 @@ libraries.tools = [
 ]
 
 
-
 libraries.database = [
-]
-
-libraries.ppfmicroaws = [
-        'com.philips.digilabs.forest.micro:aws-util:1.0.0'
 ]
 
 dependencies {
