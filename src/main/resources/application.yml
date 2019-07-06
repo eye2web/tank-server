@@ -7,3 +7,4 @@ settings:
   tankEnergy: 3
   levelWidth: 12
   levelHeight: 12
+  resetSecret: "do not cheat!"

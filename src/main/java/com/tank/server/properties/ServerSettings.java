@@ -19,4 +19,6 @@ public class ServerSettings {
 
     private int levelWidth;
     private int levelHeight;
+
+    private String resetSecret;
 }

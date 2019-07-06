@@ -6,6 +6,8 @@ import lombok.Getter;
 
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
+
 @Component
 public class StaticObjectFactory {
 
@@ -27,7 +29,7 @@ public class StaticObjectFactory {
 
     public StaticObject createStaticObject(final int[] position, final StaticObjectType type) {
 
-        return new StaticObject(type.getType(), position, type.getEnergy());
+        return new StaticObject(UUID.randomUUID(), type.getType(), position, type.getEnergy());
     }
 
 }
