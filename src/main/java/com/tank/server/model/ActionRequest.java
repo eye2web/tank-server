@@ -8,13 +8,15 @@ import lombok.NoArgsConstructor;
 
 import org.springframework.lang.NonNull;
 
+import java.util.UUID;
+
 @Data
 @NoArgsConstructor
 public class ActionRequest {
 
     @NonNull
-    @JsonProperty("tankid")
-    private int tankId;
+    @JsonProperty("tankControlId")
+    private UUID controlId;
 
     @NonNull
     @JsonProperty("command")
