@@ -134,19 +134,33 @@ public class StateService {
 
         final var side = getRandomDirection();
 
+        final int[] spawnPosition;
+
         switch (side) {
             case NORTH:
-                return new int[] {random.ints(beginWidth, endWidth).findFirst().getAsInt(), 1};
+                spawnPosition = new int[] {random.ints(beginWidth, endWidth).findFirst().getAsInt(), 1};
+                break;
             case SOUTH:
-                return new int[] {random.ints(beginWidth, endWidth).findFirst().getAsInt(),
-                    serverSettings.getLevelHeight() - 1};
+                spawnPosition = new int[] {random.ints(beginWidth, endWidth).findFirst().getAsInt(),
+                    serverSettings.getLevelHeight() - 2};
+                break;
             case WEST:
-                return new int[] {1, random.ints(beginHeight, endHeight).findFirst().getAsInt()};
+                spawnPosition = new int[] {1, random.ints(beginHeight, endHeight).findFirst().getAsInt()};
+                break;
             case EAST:
-                return new int[] {serverSettings.getLevelWidth() - 1,
+                spawnPosition = new int[] {serverSettings.getLevelWidth() - 2,
                     random.ints(beginHeight, endHeight).findFirst().getAsInt()};
+                break;
+            default:
+                spawnPosition = new int[] {0, 0};
+                break;
         }
-        return new int[] {0, 0};
+
+        if (isPositionAvailable(spawnPosition)) {
+            return spawnPosition;
+        } else {
+            return getRandomSpawnPoint();
+        }
     }
 
     private CardinalDirection getRandomDirection() {
