@@ -1,0 +1,151 @@
+{
+	"info": {
+		"_postman_id": "41b77d90-f09e-4fd1-af0a-d65344481e39",
+		"name": "Tanks",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Subscribe new tank",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"name\": \"Tank name\",\n\t\"tankControlId\": null\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/subscribe",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"subscribe"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get world information",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:3000/world",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"world"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Tank fire",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"tankid\": 1,\n\t\"command\": \"fire\"\n}"
+				},
+				"url": {
+					"raw": "http://10.139.104.171:3000/tank",
+					"protocol": "http",
+					"host": [
+						"10",
+						"139",
+						"104",
+						"171"
+					],
+					"port": "3000",
+					"path": [
+						"tank"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Tank move north, east, south, west",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"tankControlId\": \"0d8497d9-7c18-4381-8861-9a179b004bfa\",\n\t\"command\": \"fire\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/tank",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"tank"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Reset",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"secret\": \"do not cheat!\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/reset",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"reset"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
