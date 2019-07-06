@@ -54,7 +54,6 @@ dependencies {
 
     compile libraries.springboot,
             libraries.tools,
-            libraries.ppfmicroaws,
             libraries.database
 
     testCompile libraries.test
