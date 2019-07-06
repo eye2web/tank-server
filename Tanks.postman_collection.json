@@ -68,16 +68,13 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"tankid\": 1,\n\t\"command\": \"fire\"\n}"
+					"raw": "{\n\t\"tankControlId\": \"0d8497d9-7c18-4381-8861-9a179b004bfa\",\n\t\"command\": \"fire\"\n}"
 				},
 				"url": {
-					"raw": "http://10.139.104.171:3000/tank",
+					"raw": "http://localhost:3000/tank",
 					"protocol": "http",
 					"host": [
-						"10",
-						"139",
-						"104",
-						"171"
+						"localhost"
 					],
 					"port": "3000",
 					"path": [
