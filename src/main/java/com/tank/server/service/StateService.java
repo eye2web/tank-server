@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Stack;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -55,6 +56,7 @@ public class StateService {
 
         world =
             new World(
+                UUID.randomUUID(),
                 new ArrayList<>(),
                 new ArrayList<>(),
                 new Dimension(serverSettings.getLevelWidth(), serverSettings.getLevelHeight()),
@@ -65,7 +67,6 @@ public class StateService {
 
         for (Color color : Color.values()) {
             final var tank = new Tank();
-            tank.setId(id);
             tank.setColor(color);
             availableTanks.push(tank);
             id--;
@@ -79,11 +80,17 @@ public class StateService {
     }
 
     public Tank joinGame(final String name) {
+        return joinGame(name, UUID.randomUUID());
+    }
+
+    public Tank joinGame(final String name, final UUID uuid) {
         if (!isTankAvailable()) {
             return null;
         }
 
         final var tank = availableTanks.pop();
+        tank.setId(UUID.randomUUID());
+        tank.setControlId(uuid);
         tank.setName(name);
 
         log.info(String
@@ -102,9 +109,9 @@ public class StateService {
         final var action = tankActionRequest.getAction();
 
         if (action.equals(TankAction.FIRE)) {
-            return tankFire(tankActionRequest.getTankId());
+            return tankFire(tankActionRequest.getControlId());
         } else {
-            return moveTank(tankActionRequest.getTankId(), action);
+            return moveTank(tankActionRequest.getControlId(), action);
         }
     }
 
@@ -127,19 +134,33 @@ public class StateService {
 
         final var side = getRandomDirection();
 
+        final int[] spawnPosition;
+
         switch (side) {
             case NORTH:
-                return new int[] {random.ints(beginWidth, endWidth).findFirst().getAsInt(), 1};
+                spawnPosition = new int[] {random.ints(beginWidth, endWidth).findFirst().getAsInt(), 1};
+                break;
             case SOUTH:
-                return new int[] {random.ints(beginWidth, endWidth).findFirst().getAsInt(),
-                    serverSettings.getLevelHeight() - 1};
+                spawnPosition = new int[] {random.ints(beginWidth, endWidth).findFirst().getAsInt(),
+                    serverSettings.getLevelHeight() - 2};
+                break;
             case WEST:
-                return new int[] {1, random.ints(beginHeight, endHeight).findFirst().getAsInt()};
+                spawnPosition = new int[] {1, random.ints(beginHeight, endHeight).findFirst().getAsInt()};
+                break;
             case EAST:
-                return new int[] {serverSettings.getLevelWidth() - 1,
+                spawnPosition = new int[] {serverSettings.getLevelWidth() - 2,
                     random.ints(beginHeight, endHeight).findFirst().getAsInt()};
+                break;
+            default:
+                spawnPosition = new int[] {0, 0};
+                break;
         }
-        return new int[] {0, 0};
+
+        if (isPositionAvailable(spawnPosition)) {
+            return spawnPosition;
+        } else {
+            return getRandomSpawnPoint();
+        }
     }
 
     private CardinalDirection getRandomDirection() {
@@ -151,10 +172,9 @@ public class StateService {
         return directions[randomIndex];
     }
 
-    private boolean moveTank(final int tankId, final TankAction action) {
+    private boolean moveTank(final UUID controlId, final TankAction action) {
 
-        final var tankOpt = world.getTanks().stream()
-            .filter(tank -> tank.getId() == tankId).findFirst();
+        final var tankOpt = findTankByControlId(controlId);
 
         if (tankOpt.isPresent()) {
 
@@ -188,10 +208,9 @@ public class StateService {
         return pos;
     }
 
-    private boolean tankFire(final int tankId) {
+    private boolean tankFire(final UUID controlId) {
 
-        final var tankOpt = world.getTanks().stream()
-            .filter(tank -> tank.getId() == tankId).findFirst();
+        final var tankOpt = findTankByControlId(controlId);
 
         if (tankOpt.isPresent()) {
             final var tank = tankOpt.get();
@@ -247,11 +266,18 @@ public class StateService {
         return false;
     }
 
+    private Optional<Tank> findTankByControlId(final UUID controlId) {
+        return world.getTanks().stream()
+            .filter(tank -> tank.getControlId().equals(controlId)).findFirst();
+    }
+
     private void addLaserToWorld(final int[] startPosition,
                                  final int[] endPosition,
                                  final CardinalDirection direction) {
 
-        world.getLasers().add(new Laser(ArrayUtils.clone(startPosition),
+        world.getLasers().add(new Laser(
+            UUID.randomUUID(),
+            ArrayUtils.clone(startPosition),
             ArrayUtils.clone(endPosition),
             Timestamp.from(Instant.now()),
             Timestamp.from(Instant.now().plusSeconds(serverSettings.getTankShootDelay())),
