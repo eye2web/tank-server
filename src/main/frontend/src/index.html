@@ -17,11 +17,7 @@
         .grid {
           display: flex;
           position: relative;
-        }
-
-        .laser {
-          position: absolute;
-          background: rgba(255, 105, 180, 0.4);
+          height: 100vh;
         }
 
         .player {
@@ -41,48 +37,11 @@
           margin-left: auto;
         }
 
-        .column {
-          display: flex;
-          flex-direction: column;
-        }
-
         .color-indicator {
           width: 20px;
           height: 20px;
           border: 1px solid black;
           margin-right: 1rem;
-        }
-
-        .tree {
-          background-image: url('assets/tree.png');
-          background-size: 100% 100%;
-        }
-
-        .tank {
-          background-image: url('assets/tank.png');
-          background-size: 100% 100%;
-        }
-
-        .north {
-          transform: rotate(0deg);
-        }
-        .east {
-          transform: rotate(90deg);
-        }
-        .south {
-          transform: rotate(180deg);
-        }
-        .west {
-          transform: rotate(270deg);
-        }
-
-        .tile {
-          width: 50px;
-          height: 50px;
-        }
-
-        .wall {
-          background: #ccc;
         }
     </style>
   </head>
@@ -90,6 +49,11 @@
     <div class="grid"></div>
     <div class="player-list"></div>
   </body>
-  <script type="text/javascript" src="src/loadWorld.js"></script>
-  <script type="text/javascript" src="src/index.js"></script>
+  <script type="text/javascript" src="scripts/three.js"></script>
+  <script type="text/javascript" src="scripts/orbitControls.js"></script>
+  <script type="text/javascript" src="scripts/loadWorld.js"></script>
+  <script type="text/javascript" src="scripts/renderers.js"></script>
+  <script type="text/javascript" src="scripts/worldState.js"></script>
+  <script type="text/javascript" src="scripts/playerList.js"></script>
+  <script type="text/javascript" src="scripts/index.js"></script>
 </html>
