@@ -50,6 +50,7 @@ class _BaseRenderer {
       y,
       this.zPosition,
     );
+    mesh.castShadow = true;
     this.threeRenderer.addToScene(mesh);
 
     this.meshes[asset.id] = mesh;
@@ -127,13 +128,28 @@ class _LaserRenderer extends _BaseRenderer {
 }
 
 class _TreeRenderer extends _BaseRenderer {
-  constructor(...args) {
-    super(...args);
+  constructor(renderer, treeMesh) {
+    super(renderer);
 
+    this.treeMesh = treeMesh;
     this.zPosition = 2;
     this.geometry = new THREE.BoxGeometry(1, 4, 1);
     this.material = new THREE.MeshStandardMaterial();
     this.material.color.setHex(0x4e2d04);
+  }
+
+  create(assetEvent) {
+    const { detail: asset } = assetEvent;
+    const [x, y] = asset.position;
+
+    const mesh = this.treeMesh.clone();
+    mesh.position.y = 1.65;
+    mesh.castShadow = true;
+
+    this.threeRenderer.setPosition(mesh, x, y);
+    this.threeRenderer.addToScene(mesh);
+
+    this.meshes[asset.id] = mesh;
   }
 
   bind(bus) {
@@ -144,12 +160,10 @@ class _TreeRenderer extends _BaseRenderer {
 }
 
 class _TankRenderer extends _BaseRenderer {
-  constructor(...args) {
-    super(...args);
+  constructor(renderer, tankMesh) {
+    super(renderer);
 
-    this.hullGeometry = new THREE.BoxGeometry(2.5, 1.5, 2);
-    this.turretGeometry = new THREE.BoxGeometry(1.5, 1, 1.5);
-    this.barrelGeometry = new THREE.BoxGeometry(2.5, 0.5, 0.5);
+    this.tankMesh = tankMesh;
   }
 
   update(tankEvent) {
@@ -162,34 +176,53 @@ class _TankRenderer extends _BaseRenderer {
     return mesh;
   }
 
+  createPlayerLabel(color, name) {
+    const canvas = document.createElement('canvas');
+    const width = 400;
+    const height = 400;
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext('2d');
+    context.scale(2, 2);
+    context.textAlign = 'center';
+    context.fillStyle = color;
+    context.fillRect(95, 0, 10, 10);
+    context.fillStyle = 'white';
+    context.strokeStyle = 'black';
+    context.lineWidth = 3;
+    context.font = '19px monospace';
+    context.strokeText(name, 100, 30);
+    context.fillText(name, 100, 30);
+    const canvasTexture = new THREE.Texture(canvas);
+    canvasTexture.needsUpdate = true;
+
+    const mat = new THREE.SpriteMaterial({
+      map: canvasTexture,
+    });
+
+    const sprite = new THREE.Sprite(mat);
+    sprite.scale.set(10, 10, 1);
+    sprite.position.y = -2;
+    return sprite;
+  }
 
   create(assetEvent) {
     const { detail: asset } = assetEvent;
     const [x, y] = asset.position;
 
-    const group = new THREE.Group();
+    const sprite = this.createPlayerLabel(asset.color, asset.name);
 
-    const playerMaterial = new THREE.MeshStandardMaterial();
-    playerMaterial.color = new THREE.Color(asset.color);
+    const mesh = this.tankMesh.clone();
+    mesh.add(sprite);
+    mesh.position.y = 1.65;
+    mesh.children[0].castShadow = true;
 
-    const hull = new THREE.Mesh(this.hullGeometry, playerMaterial);
-    hull.position.y = 0.75;
-    group.add(hull);
+    this.threeRenderer.setPosition(mesh, x, y);
+    this.threeRenderer.setRotation(mesh, asset.orientation);
+    this.threeRenderer.addToScene(mesh);
 
-    const turret = new THREE.Mesh(this.turretGeometry, playerMaterial);
-    turret.position.y = 1.5 + 0.5;
-    group.add(turret);
-
-    const barrel = new THREE.Mesh(this.barrelGeometry, playerMaterial);
-    barrel.position.y = 1.5 + 0.5;
-    barrel.position.x = -1.25;
-    group.add(barrel);
-
-    this.threeRenderer.setPosition(group, x, y);
-    this.threeRenderer.setRotation(group, asset.orientation);
-    this.threeRenderer.addToScene(group);
-
-    this.meshes[asset.id] = group;
+    this.meshes[asset.id] = mesh;
   }
 
   bind(bus) {
@@ -241,7 +274,11 @@ class _ThreeRenderer {
     this.camera.lookAt(this.scene.position);
 
     this.renderer = new THREE.WebGLRenderer();
-    this.renderer.setClearColor(0xffffff, 1);
+    this.renderer.shadowMap.enabled = true;
+
+    const backgroundColor = new THREE.Color(document.body.style.background);
+    this.renderer.setClearColor(backgroundColor, 1);
+
     this.renderer.setSize(width, height);
     this.controls = new THREE.OrbitControls(this.camera, this.renderer.domElement);
     this.container.appendChild(this.renderer.domElement);
@@ -277,27 +314,47 @@ class _ThreeRenderer {
         mesh.rotation.y = 0.5 * Math.PI;
         return;
       default:
-        throw new Error(`Unsupported orientation found: ${orientation}`)
+        throw new Error(`Unsupported orientation found: ${orientation}`);
     }
   }
 
   addLighting() {
-    const hemisphere = new THREE.HemisphereLight(0xffffff, 0xffffff, 1);
+    const ambientLight = new THREE.AmbientLight(0x330000);
+    this.scene.add(ambientLight);
+
+    const hemisphere = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.8);
     this.scene.add(hemisphere);
 
-    const sun = new THREE.PointLight(0xffffff, 0.8);
-    sun.position.set(0, 50, 50);
-    this.scene.add(sun);
+    const height = 10.75;
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.color.setHSL(0.1, 1, 0.95);
+    dirLight.position.set(-10, 1 * height, 10);
+    this.scene.add(dirLight);
+    dirLight.castShadow = true;
+    dirLight.position.multiplyScalar(5);
+    dirLight.shadow.mapSize.width = 512;
+    dirLight.shadow.mapSize.height = 512;
+
+    const d = 20;
+    dirLight.shadow.camera.left = -d;
+    dirLight.shadow.camera.right = d;
+    dirLight.shadow.camera.top = d;
+    dirLight.shadow.camera.bottom = -d;
+
+    const light2 = new THREE.DirectionalLight(0x36feff, 1);
+    light2.color.setHSL(0.1, 1, 0.95);
+    light2.position.set(10, height, -10);
+    this.scene.add(light2);
   }
 
   createMap(width, height) {
     const geometry = new THREE.PlaneGeometry(width * SIZE, height * SIZE, 32);
-    const material = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+    const material = new THREE.MeshStandardMaterial({ color: 0x47a91f, side: THREE.DoubleSide });
     const plane = new THREE.Mesh(geometry, material);
     plane.rotateX(-Math.PI / 2);
+    plane.receiveShadow = true;
 
     this.scene.add(plane);
-    this.scene.add(new THREE.AxisHelper(40));
   }
 
   convertFromGridToWorld(x, y) {

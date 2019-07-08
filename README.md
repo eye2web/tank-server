@@ -1,98 +1,27 @@
 # tank-server 
 
-> HELP: Project description goes here.  
-> 
-> - Describe very briefly but clearly what the project does.  
-> - List its most useful/innovative/noteworthy features.  
-> - Link to any supplementary blog posts or project main pages.
-> - If possible, include screenshots and demo videos.
+A simple tank battle game, where developers battle to have their tank last standing!
 
-## Table of Contents
-- [Getting Started](#getting-started)
-- [Building](#building)
-- [Testing](#testing)
-- [Deploying](#deploying)
-- [Configuration](#configuration)
-- [Documentation](#documentation)
-- [FAQ](#faq)
-- [Built With](#built-with)
-- [Support](#support)
-- [Maintainers and Contributors](#maintainers-and-contributors)
-- [Contributing](#contributing)
-- [Changelog](#changelog)
-- [Links](#links)
-- [License](#license)
+## Getting started
 
-## Getting Started
+Run this server using `./gradeW bootRun`.
+This will start a server and serve the frontend at localhost:3000.
 
-### Prerequisites
+Contestants can now send HTTP commands to this API, to subscribe their tank, move and fire!
 
-> HELP: List with things you need to install/build/test the software. 
+The possible commands are listed in the `Tanks.postman_collection.json`
 
-### Setup
+## Developing - Backend
 
-> HELP: A step by step series and examples that tell how to get a development environment running.
+TODO
 
-## Building
+## Developing - Frontend
 
-> HELP: Explain how to build the artefacts.
+First run the java server
+```
+cd src/main/frontend/
+yarn
+yarn start
+```
 
-## Testing
-
-> HELP: Explain how to run the automated tests for this system.
-
-## Deploying
-
-> HELP: Explain how the artifacts are being deployed.
-
-## Configuration
-
-> HELP: Mention what the configuration options are including example parameter values.
-
-## Documentation
-
-> HELP: Links to further documentation which is available.
-
-## FAQ
-
-> HELP:  
-> Q. Is this normal?
-> 
-> A. Yes. This is normal. Why ...
-
-## Built with
-
-> HELP: List the technology stack
-
-## Support
-
-> HELP: Mention how people can contact e.g.  
->   
-> - Email address.  
-> - Google Group/mailing list (if applicable).  
-> - IRC or Slack (if applicable).
-
-## Maintainers and Contributors
-
-> Help: Current maintainers:  
->  
-> * [Maintainer Name](https://github.com/maintainer_github)  
-> * [Another Maintainer](https://github.com/maintainer_github)
-
-## Contributing
-
-If you would like to contribute, please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on the process for submitting pull requests.
-
-## Changelog
-
-All notable changes to this project will be documented in [Changelog](CHANGELOG.md).
-
-## Links
-
-> HELP: List with links e.g. Issue Tracker, Documentation
-
-## License
-
-> HELP: Mention the license of the project 
-
-This project is licensed under the NAME_OF_LICENSE - see the [License](LICENSE.md) file for details.
+Now visit the frontend at localhost:8080
