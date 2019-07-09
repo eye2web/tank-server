@@ -1,5 +1,7 @@
 package com.tank.server.model.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 
@@ -16,4 +18,7 @@ public class World {
     private final List<Tank> tanks;
     private final Dimension dimensions;
     private final List<StaticObject> staticObjects;
+
+    @JsonIgnore
+    private final List<int[]> startingPositions;
 }
