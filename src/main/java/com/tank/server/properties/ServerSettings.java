@@ -20,5 +20,8 @@ public class ServerSettings {
     private int levelWidth;
     private int levelHeight;
 
+    private Long explosionTimeMilliseconds;
+    private Long laserTimeMilliseconds;
+
     private String resetSecret;
 }

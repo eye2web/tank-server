@@ -5,6 +5,7 @@ import com.tank.server.model.ActionRequest;
 import com.tank.server.model.domain.CardinalDirection;
 import com.tank.server.model.domain.Color;
 import com.tank.server.model.domain.Dimension;
+import com.tank.server.model.domain.Explosion;
 import com.tank.server.model.domain.Laser;
 import com.tank.server.model.domain.StaticObject;
 import com.tank.server.model.domain.Tank;
@@ -49,6 +50,7 @@ public class StateService {
 
     public World getWorld() {
         checkLaserExpired(world.getLasers());
+        checkExplosionExpired(world.getExplosions());
         return world;
     }
 
@@ -57,6 +59,7 @@ public class StateService {
         world =
             new World(
                 UUID.randomUUID(),
+                new ArrayList<>(),
                 new ArrayList<>(),
                 new ArrayList<>(),
                 new Dimension(serverSettings.getLevelWidth(), serverSettings.getLevelHeight()),
@@ -280,7 +283,7 @@ public class StateService {
             ArrayUtils.clone(startPosition),
             ArrayUtils.clone(endPosition),
             Timestamp.from(Instant.now()),
-            Timestamp.from(Instant.now().plusSeconds(serverSettings.getTankShootDelay())),
+            serverSettings.getLaserTimeMilliseconds(),
             direction
         ));
     }
@@ -291,13 +294,29 @@ public class StateService {
 
         for (Laser laser : lasers) {
 
-            if (laser.getEndTime().toInstant().isBefore(Instant.now())) {
+            if (laser.getStartTime().toInstant().plusMillis(laser.getDurationMilliseconds()).isBefore(Instant.now())) {
                 deleteLasers.add(laser);
             }
 
         }
 
         lasers.removeAll(deleteLasers);
+    }
+
+    private void checkExplosionExpired(final List<Explosion> explosions) {
+
+        final var deleteExplosions = new ArrayList<Explosion>();
+
+        for (Explosion explosion : explosions) {
+
+            if (explosion.getStartTime().toInstant().plusMillis(explosion.getDurationMilliseconds())
+                .isBefore(Instant.now())) {
+                deleteExplosions.add(explosion);
+            }
+
+        }
+
+        explosions.removeAll(deleteExplosions);
     }
 
     private void handleTankHit(final Tank shootingTank, final Tank targetTank) {
@@ -309,6 +328,7 @@ public class StateService {
 
             shootingTank.getKills().add(targetTank.getId());
             world.getTanks().remove(targetTank);
+            createWorldExplosion("tank", targetTank.getId(), targetTank.getPosition());
 
             // Free tank to the pool
             addTankToPool(targetTank);
@@ -323,8 +343,20 @@ public class StateService {
             if (staticObject.getEnergy() < 1) {
 
                 world.getStaticObjects().remove(staticObject);
+                createWorldExplosion(staticObject.getType(), staticObject.getId(), staticObject.getPosition());
             }
         }
+    }
+
+    private void createWorldExplosion(final String type, final UUID id, final int[] position) {
+        final var explosion = new Explosion();
+        explosion.setId(UUID.randomUUID());
+        explosion.setType(type);
+        explosion.setEntityId(id);
+        explosion.setStartPos(ArrayUtils.clone(position));
+        explosion.setStartTime(Timestamp.from(Instant.now()));
+        explosion.setDurationMilliseconds(serverSettings.getExplosionTimeMilliseconds());
+        world.getExplosions().add(explosion);
     }
 
     private Optional<Tank> getTankAtPosition(final int[] position) {

@@ -11,6 +11,7 @@ import java.util.UUID;
 public class World {
 
     private final UUID id;
+    private final List<Explosion> explosions;
     private final List<Laser> lasers;
     private final List<Tank> tanks;
     private final Dimension dimensions;
