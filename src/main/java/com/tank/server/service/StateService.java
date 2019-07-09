@@ -1,10 +1,9 @@
 package com.tank.server.service;
 
-import com.tank.server.factory.StaticObjectFactory;
 import com.tank.server.model.ActionRequest;
 import com.tank.server.model.domain.CardinalDirection;
 import com.tank.server.model.domain.Color;
-import com.tank.server.model.domain.Dimension;
+import com.tank.server.model.domain.Explosion;
 import com.tank.server.model.domain.Laser;
 import com.tank.server.model.domain.StaticObject;
 import com.tank.server.model.domain.Tank;
@@ -33,45 +32,37 @@ import java.util.UUID;
 @Slf4j
 public class StateService {
 
+    private final WorldLoader worldLoader;
+
     private final Random random;
     private final ServerSettings serverSettings;
-    private final StaticObjectFactory staticObjectFactory;
-    private Stack<Tank> availableTanks;
+    private final Stack<Tank> availableTanks;
 
     private World world;
 
-    private StateService(final ServerSettings serverSettings, final StaticObjectFactory staticObjectFactory) {
+    private StateService(final WorldLoader worldLoader, final ServerSettings serverSettings) {
+        availableTanks = new Stack<>();
+        this.worldLoader = worldLoader;
         this.serverSettings = serverSettings;
-        this.staticObjectFactory = staticObjectFactory;
         random = new Random();
         resetGame();
     }
 
     public World getWorld() {
         checkLaserExpired(world.getLasers());
+        checkExplosionExpired(world.getExplosions());
         return world;
     }
 
     public void resetGame() {
 
-        world =
-            new World(
-                UUID.randomUUID(),
-                new ArrayList<>(),
-                new ArrayList<>(),
-                new Dimension(serverSettings.getLevelWidth(), serverSettings.getLevelHeight()),
-                getStaticWorldObjects());
-        availableTanks = new Stack<>();
-
-        int id = Color.values().length;
+        world = this.worldLoader.loadLevel();
 
         for (Color color : Color.values()) {
             final var tank = new Tank();
             tank.setColor(color);
             availableTanks.push(tank);
-            id--;
         }
-
         log.info("Server reset");
     }
 
@@ -125,36 +116,8 @@ public class StateService {
 
     private int[] getRandomSpawnPoint() {
 
-        final int margin = 2;
-        final int beginWidth = serverSettings.getLevelWidth() / 2 - margin;
-        final int endWidth = serverSettings.getLevelWidth() / 2 + margin + 1;
-
-        final int beginHeight = serverSettings.getLevelHeight() / 2 - margin;
-        final int endHeight = serverSettings.getLevelHeight() / 2 + margin + 1;
-
-        final var side = getRandomDirection();
-
-        final int[] spawnPosition;
-
-        switch (side) {
-            case NORTH:
-                spawnPosition = new int[] {random.ints(beginWidth, endWidth).findFirst().getAsInt(), 1};
-                break;
-            case SOUTH:
-                spawnPosition = new int[] {random.ints(beginWidth, endWidth).findFirst().getAsInt(),
-                    serverSettings.getLevelHeight() - 2};
-                break;
-            case WEST:
-                spawnPosition = new int[] {1, random.ints(beginHeight, endHeight).findFirst().getAsInt()};
-                break;
-            case EAST:
-                spawnPosition = new int[] {serverSettings.getLevelWidth() - 2,
-                    random.ints(beginHeight, endHeight).findFirst().getAsInt()};
-                break;
-            default:
-                spawnPosition = new int[] {0, 0};
-                break;
-        }
+        final var positions = world.getStartingPositions();
+        final var spawnPosition = positions.get(random.nextInt(positions.size()));
 
         if (isPositionAvailable(spawnPosition)) {
             return spawnPosition;
@@ -250,11 +213,11 @@ public class StateService {
                     handleStaticObjectHit(optStaticObjectShot.get());
                     break;
                 }
-
+                
             } while (
-                position[0] < serverSettings.getLevelWidth() &&
+                position[0] < world.getDimensions().getWidth() &&
                     position[0] > 0 &&
-                    position[1] < serverSettings.getLevelHeight() &&
+                    position[1] < world.getDimensions().getHeight() &&
                     position[1] > 0
             );
 
@@ -280,7 +243,7 @@ public class StateService {
             ArrayUtils.clone(startPosition),
             ArrayUtils.clone(endPosition),
             Timestamp.from(Instant.now()),
-            Timestamp.from(Instant.now().plusSeconds(serverSettings.getTankShootDelay())),
+            serverSettings.getLaserTimeMilliseconds(),
             direction
         ));
     }
@@ -291,13 +254,29 @@ public class StateService {
 
         for (Laser laser : lasers) {
 
-            if (laser.getEndTime().toInstant().isBefore(Instant.now())) {
+            if (laser.getStartTime().toInstant().plusMillis(laser.getDurationMilliseconds()).isBefore(Instant.now())) {
                 deleteLasers.add(laser);
             }
 
         }
 
         lasers.removeAll(deleteLasers);
+    }
+
+    private void checkExplosionExpired(final List<Explosion> explosions) {
+
+        final var deleteExplosions = new ArrayList<Explosion>();
+
+        for (Explosion explosion : explosions) {
+
+            if (explosion.getStartTime().toInstant().plusMillis(explosion.getDurationMilliseconds())
+                .isBefore(Instant.now())) {
+                deleteExplosions.add(explosion);
+            }
+
+        }
+
+        explosions.removeAll(deleteExplosions);
     }
 
     private void handleTankHit(final Tank shootingTank, final Tank targetTank) {
@@ -309,6 +288,7 @@ public class StateService {
 
             shootingTank.getKills().add(targetTank.getId());
             world.getTanks().remove(targetTank);
+            createWorldExplosion("tank", targetTank.getId(), targetTank.getPosition());
 
             // Free tank to the pool
             addTankToPool(targetTank);
@@ -323,8 +303,20 @@ public class StateService {
             if (staticObject.getEnergy() < 1) {
 
                 world.getStaticObjects().remove(staticObject);
+                createWorldExplosion(staticObject.getType(), staticObject.getId(), staticObject.getPosition());
             }
         }
+    }
+
+    private void createWorldExplosion(final String type, final UUID id, final int[] position) {
+        final var explosion = new Explosion();
+        explosion.setId(UUID.randomUUID());
+        explosion.setType(type);
+        explosion.setEntityId(id);
+        explosion.setStartPos(ArrayUtils.clone(position));
+        explosion.setStartTime(Timestamp.from(Instant.now()));
+        explosion.setDurationMilliseconds(serverSettings.getExplosionTimeMilliseconds());
+        world.getExplosions().add(explosion);
     }
 
     private Optional<Tank> getTankAtPosition(final int[] position) {
@@ -335,60 +327,6 @@ public class StateService {
         return world.getStaticObjects().stream()
             .filter(staticObject -> Arrays.equals(staticObject.getPosition(), position))
             .findFirst();
-    }
-
-    private List<StaticObject> getStaticWorldObjects() {
-
-        final var staticObjects = new ArrayList<StaticObject>();
-
-        placeWalls(staticObjects);
-        placeTrees(staticObjects);
-
-        return staticObjects;
-    }
-
-    private void placeWalls(List<StaticObject> staticObjects) {
-
-        for (int x = 0; x < serverSettings.getLevelWidth(); x++) {
-            for (int y = 0; y < serverSettings.getLevelHeight(); y++) {
-
-                final int[] position = new int[] {x, y};
-
-                if (x == 0 ||
-                    x == serverSettings.getLevelWidth() - 1 ||
-                    y == 0 ||
-                    y == serverSettings.getLevelHeight() - 1
-                ) {
-                    staticObjects.add(
-                        staticObjectFactory.createStaticObject(position, StaticObjectFactory.StaticObjectType.WALL)
-                    );
-                }
-
-
-            }
-        }
-    }
-
-    private void placeTrees(List<StaticObject> staticObjects) {
-
-        for (int x = 0; x < serverSettings.getLevelWidth(); x++) {
-            for (int y = 0; y < serverSettings.getLevelHeight(); y++) {
-
-                final int[] position = new int[] {x, y};
-
-                if (
-                    (x > 3 && x < serverSettings.getLevelWidth() - 4 && (y == 3
-                        || y == serverSettings.getLevelHeight() - 4)) ||
-
-                        y > 3 && y < serverSettings.getLevelHeight() - 4 && (x == 3
-                            || x == serverSettings.getLevelWidth() - 4)
-                ) {
-                    staticObjects.add(
-                        staticObjectFactory.createStaticObject(position, StaticObjectFactory.StaticObjectType.TREE)
-                    );
-                }
-            }
-        }
     }
 
     private boolean isPositionAvailable(final int[] position) {
