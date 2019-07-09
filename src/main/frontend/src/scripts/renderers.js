@@ -1,4 +1,5 @@
 const SIZE = 3;
+const TANK_MOVEMENT_SPEED = 0.5;
 const THREE = window.THREE;
 
 function getValuesBetween(start, end) {
@@ -69,9 +70,9 @@ class _LaserRenderer extends _BaseRenderer {
   constructor(...args) {
     super(...args);
 
-    this.zPosition = 2;
-    this.geometry = new THREE.BoxGeometry(1.25, 0.5, 0.5);
-    this.material = new THREE.MeshNormalMaterial();
+    this.zPosition = 1.4;
+    this.geometry = new THREE.BoxGeometry(3, 0.2, 0.2);
+    this.material = new THREE.MeshBasicMaterial({ color: 0xff69b4 });
   }
 
   bind(bus) {
@@ -81,7 +82,6 @@ class _LaserRenderer extends _BaseRenderer {
 
   create(assetEvent) {
     const { detail: laser } = assetEvent;
-
     const group = new THREE.Group();
 
     const [xStart, yStart] = laser.startPos;
@@ -94,6 +94,10 @@ class _LaserRenderer extends _BaseRenderer {
     );
     group.add(startMesh);
 
+    const light = new THREE.PointLight(0xff00f0, 5, 1000);
+    light.position.set(...Object.values(startMesh.position));
+    group.add(light);
+
     const [xEnd, yEnd] = laser.endPos;
     const endMesh = this.threeRenderer.createObjectAtPosition(
       this.geometry,
@@ -103,6 +107,27 @@ class _LaserRenderer extends _BaseRenderer {
       this.zPosition,
     );
     group.add(endMesh);
+
+
+    // Aninate a light along the laser direction, to make it looks like the laser actually shoots.
+    // TODO the away position should be startPosition + scalar * orientation,
+    // Because a laser can have the same start & endPos, and then this calculation doesn't make sense
+    let awayX = endMesh.position.x;
+    let awayZ = endMesh.position.z;
+    if (awayX === startMesh.position.x) {
+      awayZ += (awayZ - startMesh.position.z) * 10;
+    } else {
+      awayX += (awayX - startMesh.position.x) * 10;
+    }
+
+    window.TweenMax.to(light.position, 0.5, {
+      x: awayX,
+      z: awayZ,
+      ease: window.Power1.easeIn,
+      onComplete: () => {
+        light.intensity = 0;
+      },
+    });
 
     const intermediatePositions = getIntermediatePositions(laser.startPos, laser.endPos);
     intermediatePositions.forEach(position => {
@@ -170,8 +195,24 @@ class _TankRenderer extends _BaseRenderer {
     const { detail: tank } = tankEvent;
     const [x, y] = tank.position;
     const mesh = this.meshes[tank.id];
-    this.threeRenderer.setPosition(mesh, x, y);
-    this.threeRenderer.setRotation(mesh, tank.orientation);
+
+    const targetRotation = this.threeRenderer.getYRotationFromOrientation(tank.orientation);
+    const [worldX, worldZ] = this.threeRenderer.convertFromGridToWorld(x, y);
+
+    const timeline = new window.TimelineMax();
+    timeline
+      .to(mesh.rotation, TANK_MOVEMENT_SPEED / 2, {
+        directionalRotation: {
+          y: `${targetRotation}_short`,
+          useRadians: true,
+        },
+        ease: window.Power1.easeInOut,
+      })
+      .to(mesh.position, TANK_MOVEMENT_SPEED / 2, {
+        x: worldX,
+        z: worldZ,
+        ease: window.Power1.easeInOut,
+      });
 
     return mesh;
   }
@@ -299,23 +340,24 @@ class _ThreeRenderer {
     mesh.position.z = worldZ;
   }
 
-  setRotation(mesh, orientation) {
+  getYRotationFromOrientation(orientation) {
     switch (orientation) {
       case 'north':
-        mesh.rotation.y = 0;
-        return;
+        return 0;
       case 'east':
-        mesh.rotation.y = -0.5 * Math.PI;
-        return;
+        return -0.5 * Math.PI;
       case 'south':
-        mesh.rotation.y = Math.PI;
-        return;
+        return Math.PI;
       case 'west':
-        mesh.rotation.y = 0.5 * Math.PI;
-        return;
+        return 0.5 * Math.PI;
       default:
         throw new Error(`Unsupported orientation found: ${orientation}`);
     }
+  }
+
+  setRotation(mesh, orientation) {
+    const rotation = this.getYRotationFromOrientation(orientation);
+    mesh.rotation.y = rotation;
   }
 
   addLighting() {
