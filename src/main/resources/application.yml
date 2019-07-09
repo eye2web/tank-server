@@ -4,8 +4,8 @@ server:
 settings:
   tankMovementDelay: 1
   tankShootDelay: 2
-  explosionTimeMilliseconds: 2750
-  laserTimeMilliseconds: 2750
+  explosionTimeMilliseconds: 750
+  laserTimeMilliseconds: 750
   tankEnergy: 3
   levelWidth: 12
   levelHeight: 12
