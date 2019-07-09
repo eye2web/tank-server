@@ -8,4 +8,4 @@ settings:
   laserTimeMilliseconds: 750
   tankEnergy: 3
   resetSecret: "do not cheat!"
-  levelFile: "2.level"
+  levelFile: "1.level"
