@@ -29,6 +29,7 @@ libraries.tools = [
         'javax.xml.bind:jaxb-api:2.3.1',
         'org.glassfish.jersey.core:jersey-common:2.28',
         'org.slf4j:slf4j-api:1.7.26',
+        'org.modelmapper:modelmapper:2.3.2'
 ]
 
 
