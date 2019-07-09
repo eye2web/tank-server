@@ -7,7 +7,5 @@ settings:
   explosionTimeMilliseconds: 750
   laserTimeMilliseconds: 750
   tankEnergy: 3
-  levelWidth: 12
-  levelHeight: 12
   resetSecret: "do not cheat!"
   levelFile: "2.level"

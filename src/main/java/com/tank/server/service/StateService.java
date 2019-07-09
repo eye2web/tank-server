@@ -213,11 +213,11 @@ public class StateService {
                     handleStaticObjectHit(optStaticObjectShot.get());
                     break;
                 }
-
+                
             } while (
-                position[0] < serverSettings.getLevelWidth() &&
+                position[0] < world.getDimensions().getWidth() &&
                     position[0] > 0 &&
-                    position[1] < serverSettings.getLevelHeight() &&
+                    position[1] < world.getDimensions().getHeight() &&
                     position[1] > 0
             );
 
