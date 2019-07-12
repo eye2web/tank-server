@@ -54,7 +54,8 @@ public class StateService {
         return world;
     }
 
-    public void resetGame() {
+    public synchronized void resetGame() {
+        availableTanks.clear();
 
         world = this.worldLoader.loadLevel();
 
@@ -213,7 +214,7 @@ public class StateService {
                     handleStaticObjectHit(optStaticObjectShot.get());
                     break;
                 }
-                
+
             } while (
                 position[0] < world.getDimensions().getWidth() &&
                     position[0] > 0 &&
